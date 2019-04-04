@@ -20,15 +20,20 @@ class EloquentWordpressUserProvider extends EloquentUserProvider
             return;
         }
 
-        // First we will add each credential element to the query as a where clause.
+        // First we will add each credential element to the query as a where clause unless we are in email only mode.
+        // In email only we search specifically for the specified email.
         // Then we can execute the query and, if we found a user, return it in a
         // Eloquent User "model" that will be utilized by the Guard instances.
         $query = $this->createModel()->newQuery();
 
-        foreach ($credentials as $key => $value) {
-            if (! Str::contains($key, 'user_pass')) {
-                $query->where($key, $value);
+        if (!config('credentials.email_only', false)) {
+            foreach ($credentials as $key => $value) {
+                if (! Str::contains($key, config('credentials.password', 'user_pass'))) {
+                    $query->where($key, $value);
+                }
             }
+        } else {
+            $query->where(config('credentials.email_column'), $credentials[config('credentials.email')]);
         }
 
         return $query->first();
@@ -43,7 +48,7 @@ class EloquentWordpressUserProvider extends EloquentUserProvider
      */
     public function validateCredentials(UserContract $user, array $credentials)
     {
-        $plain = $credentials['user_pass'];
+        $plain = $credentials[config('credentials.password', 'user_pass')];
 
         return $this->hasher->check($plain, $user->getAuthPassword());
     }
