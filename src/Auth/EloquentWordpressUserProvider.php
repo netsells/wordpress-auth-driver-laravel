@@ -26,14 +26,17 @@ class EloquentWordpressUserProvider extends EloquentUserProvider
         // Eloquent User "model" that will be utilized by the Guard instances.
         $query = $this->createModel()->newQuery();
 
-        if (!config('credentials.email_only', false)) {
+        if (!config('wordpress-auth.credentials.email_only', false)) {
             foreach ($credentials as $key => $value) {
-                if (! Str::contains($key, config('credentials.password', 'user_pass'))) {
+                if (! Str::contains($key, config('wordpress-auth.credentials.password', 'user_pass'))) {
                     $query->where($key, $value);
                 }
             }
         } else {
-            $query->where(config('credentials.email_column'), $credentials[config('credentials.email')]);
+            $query->where(
+                config('wordpress-auth.credentials.email_column'),
+                $credentials[config('wordpress-auth.credentials.email')]
+            );
         }
 
         return $query->first();
@@ -48,7 +51,7 @@ class EloquentWordpressUserProvider extends EloquentUserProvider
      */
     public function validateCredentials(UserContract $user, array $credentials)
     {
-        $plain = $credentials[config('credentials.password', 'user_pass')];
+        $plain = $credentials[config('wordpress-auth.credentials.password', 'user_pass')];
 
         return $this->hasher->check($plain, $user->getAuthPassword());
     }
